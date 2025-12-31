@@ -1,32 +1,44 @@
-# Binaries
-terraform-provider-kanidm
+# Binaries for programs and plugins
 *.exe
+*.exe~
 *.dll
 *.so
 *.dylib
+terraform-provider-kanidm
 
-# Test binary
+# Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool
 *.out
+coverage.txt
 
 # Go workspace file
 go.work
+go.work.sum
 
 # Dependency directories
 vendor/
 
 # Terraform files
-*.tfstate
-*.tfstate.*
 .terraform/
 .terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
 crash.log
 crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
 
-# devbox
-.devbox/
+# GoReleaser
+dist/
+.goreleaser/
 
 # IDEs
 .idea/
@@ -34,10 +46,23 @@ crash.*.log
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 
-# Generated files
-internal/spec/provider_code_spec.json
-dist/
+# devbox
+.devbox/
+devbox.lock
+
+# Examples with sensitive data
+examples/**/.terraform/
+examples/**/.terraform.lock.hcl
+examples/**/*.tfstate
+examples/**/*.tfstate.backup
+
+# Local environment files
+.env
+.env.local
+*.local
+
+# Build artifacts
+bin/
+build/

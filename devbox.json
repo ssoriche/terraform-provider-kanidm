@@ -1,23 +1,12 @@
 {
-  "packages": {
-    "go_1_24": "latest",
-    "golangci-lint": "latest",
-    "terraform": "latest",
-    "goreleaser": "latest",
-    "darwin.apple_sdk.frameworks.CoreServices": {
-      "platforms": [
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ]
-    }
-  },
+  "packages": [
+    "go_1_24@latest",
+    "golangci-lint@latest",
+    "terraform@latest",
+    "goreleaser@latest"
+  ],
   "shell": {
-    "init_hook": [
-      "echo 'Installing Go code generation tools...'",
-      "go install github.com/hashicorp/terraform-plugin-codegen-openapi/cmd/tfplugingen-openapi@latest",
-      "go install github.com/hashicorp/terraform-plugin-codegen-framework/cmd/tfplugingen-framework@latest",
-      "go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest"
-    ],
+    "init_hook": [],
     "scripts": {
       "build": "go build -o terraform-provider-kanidm",
       "test": "go test -v ./...",
