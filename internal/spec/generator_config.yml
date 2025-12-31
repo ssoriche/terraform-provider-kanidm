@@ -1,0 +1,117 @@
+# Terraform Provider Code Generation Configuration for Kanidm
+# This file maps Kanidm's OpenAPI schema to Terraform provider resources
+
+provider:
+  name: kanidm
+
+# Resources to generate
+# Note: The code generator will create the schema and type definitions.
+# We'll need to implement the actual CRUD logic manually in the generated files.
+
+resources:
+  # Person accounts (users)
+  person:
+    create:
+      path: /v1/person
+      method: post
+    read:
+      path: /v1/person/{id}
+      method: get
+    update:
+      path: /v1/person/{id}
+      method: patch
+    delete:
+      path: /v1/person/{id}
+      method: delete
+    schema:
+      attributes:
+        id:
+          string:
+            computed_optional_required: required
+            description: "Unique identifier for the person account"
+        displayname:
+          string:
+            computed_optional_required: required
+            description: "Display name of the person"
+
+  # Service accounts
+  service_account:
+    create:
+      path: /v1/service_account
+      method: post
+    read:
+      path: /v1/service_account/{id}
+      method: get
+    update:
+      path: /v1/service_account/{id}
+      method: patch
+    delete:
+      path: /v1/service_account/{id}
+      method: delete
+    schema:
+      attributes:
+        id:
+          string:
+            computed_optional_required: required
+            description: "Unique identifier for the service account"
+        displayname:
+          string:
+            computed_optional_required: required
+            description: "Display name of the service account"
+
+  # Groups
+  group:
+    create:
+      path: /v1/group
+      method: post
+    read:
+      path: /v1/group/{id}
+      method: get
+    update:
+      path: /v1/group/{id}
+      method: patch
+    delete:
+      path: /v1/group/{id}
+      method: delete
+    schema:
+      attributes:
+        id:
+          string:
+            computed_optional_required: required
+            description: "Unique identifier for the group"
+        description:
+          string:
+            computed_optional_required: optional
+            description: "Description of the group"
+
+  # OAuth2 basic (confidential) clients
+  oauth2_basic:
+    create:
+      path: /v1/oauth2/_basic
+      method: post
+    read:
+      path: /v1/oauth2/{rs_name}
+      method: get
+    update:
+      path: /v1/oauth2/{rs_name}
+      method: patch
+    delete:
+      path: /v1/oauth2/{rs_name}
+      method: delete
+    schema:
+      attributes:
+        rs_name:
+          string:
+            computed_optional_required: required
+            description: "Resource server name (OAuth2 client identifier)"
+        displayname:
+          string:
+            computed_optional_required: required
+            description: "Display name for the OAuth2 client"
+        origin:
+          string:
+            computed_optional_required: required
+            description: "Origin URL for the OAuth2 client"
+
+# Note: OAuth2 public clients follow the same pattern but use /v1/oauth2/_public for creation
+# We may implement this as a separate resource or as a type parameter on oauth2_basic
