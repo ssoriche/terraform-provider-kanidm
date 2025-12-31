@@ -101,3 +101,28 @@ func (c *Client) SetPersonPassword(ctx context.Context, id, password string) err
 
 	return nil
 }
+
+// CreatePersonCredentialResetToken creates a credential reset token for passkey/password setup via UI
+// This enables the modern Kanidm workflow: create person -> generate token -> user sets up credentials
+// The ttl parameter is optional and specifies the token lifetime in seconds
+func (c *Client) CreatePersonCredentialResetToken(ctx context.Context, id string, ttl *int) (string, error) {
+	path := fmt.Sprintf("/v1/person/%s/_credential/_update_intent", id)
+	if ttl != nil {
+		path = fmt.Sprintf("/v1/person/%s/_credential/_update_intent/%d", id, *ttl)
+	}
+
+	resp, err := c.doRequest(ctx, "GET", path, nil)
+	if err != nil {
+		return "", fmt.Errorf("create credential reset token: %w", err)
+	}
+
+	var result struct {
+		Token string `json:"token"`
+	}
+
+	if err := decodeResponse(resp, &result); err != nil {
+		return "", err
+	}
+
+	return result.Token, nil
+}
