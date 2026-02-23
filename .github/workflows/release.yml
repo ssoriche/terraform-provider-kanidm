@@ -32,7 +32,7 @@ jobs:
           chmod 600 "${HOME}/.ssh/signing_key"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
