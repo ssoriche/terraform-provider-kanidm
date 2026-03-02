@@ -42,7 +42,7 @@ jobs:
           SSH_SIGNING_KEY_FILE: /home/runner/.ssh/signing_key
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifacts
           path: dist/*
