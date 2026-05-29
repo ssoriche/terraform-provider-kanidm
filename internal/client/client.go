@@ -156,6 +156,45 @@ func (e *Entry) GetString(key string) string {
 	return ""
 }
 
+// GetBool retrieves a boolean attribute. Kanidm typically returns booleans as
+// string arrays like ["true"] / ["false"], but native bool values are handled
+// too. Returns (value, true) when the attribute is present and parseable, or
+// (false, false) when the attribute is absent or unparseable.
+func (e *Entry) GetBool(key string) (bool, bool) {
+	val, ok := e.Attrs[key]
+	if !ok {
+		return false, false
+	}
+
+	switch v := val.(type) {
+	case bool:
+		return v, true
+	case string:
+		switch v {
+		case "true":
+			return true, true
+		case "false":
+			return false, true
+		}
+	case []any:
+		if len(v) > 0 {
+			if s, ok := v[0].(string); ok {
+				switch s {
+				case "true":
+					return true, true
+				case "false":
+					return false, true
+				}
+			}
+			if b, ok := v[0].(bool); ok {
+				return b, true
+			}
+		}
+	}
+
+	return false, false
+}
+
 // GetStringSlice retrieves a string slice attribute
 func (e *Entry) GetStringSlice(key string) []string {
 	val, ok := e.Attrs[key]

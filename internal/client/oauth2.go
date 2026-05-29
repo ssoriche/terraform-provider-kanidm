@@ -15,6 +15,11 @@ type OAuth2Client struct {
 	ClientID     string // Computed
 	ClientSecret string // Only for basic/confidential clients, populated on creation
 	IsPublic     bool
+	// PreferShortUsername controls whether the OIDC preferred_username claim
+	// returns the short name (e.g. "alice") rather than the SPN
+	// (e.g. "alice@idm.example.com"). nil means the attribute is unset on the
+	// server and the Kanidm default applies.
+	PreferShortUsername *bool
 }
 
 // CreateOAuth2BasicClient creates a new OAuth2 basic (confidential) client
@@ -101,19 +106,26 @@ func (c *Client) GetOAuth2Client(ctx context.Context, name string) (*OAuth2Clien
 		origin = origin[:len(origin)-1]
 	}
 
+	var preferShort *bool
+	if b, ok := entry.GetBool("oauth2_prefer_short_username"); ok {
+		preferShort = &b
+	}
+
 	return &OAuth2Client{
-		Name:         clientName,
-		DisplayName:  entry.GetString("displayname"),
-		Origin:       origin,
-		RedirectURIs: entry.GetStringSlice("oauth2_rs_origin_landing"),
-		ClientID:     clientName,
-		IsPublic:     isPublic,
+		Name:                clientName,
+		DisplayName:         entry.GetString("displayname"),
+		Origin:              origin,
+		RedirectURIs:        entry.GetStringSlice("oauth2_rs_origin_landing"),
+		ClientID:            clientName,
+		IsPublic:            isPublic,
+		PreferShortUsername: preferShort,
 		// Note: Client secret is never returned in GET responses
 	}, nil
 }
 
-// UpdateOAuth2Client updates an OAuth2 client
-func (c *Client) UpdateOAuth2Client(ctx context.Context, name string, displayName, origin string, redirectURIs []string) error {
+// UpdateOAuth2Client updates an OAuth2 client. preferShortUsername is optional:
+// pass nil to leave the existing value untouched.
+func (c *Client) UpdateOAuth2Client(ctx context.Context, name string, displayName, origin string, redirectURIs []string, preferShortUsername *bool) error {
 	attrs := make(map[string]any)
 
 	if displayName != "" {
@@ -126,6 +138,14 @@ func (c *Client) UpdateOAuth2Client(ctx context.Context, name string, displayNam
 
 	if redirectURIs != nil {
 		attrs["oauth2_rs_origin_landing"] = redirectURIs
+	}
+
+	if preferShortUsername != nil {
+		if *preferShortUsername {
+			attrs["oauth2_prefer_short_username"] = []string{"true"}
+		} else {
+			attrs["oauth2_prefer_short_username"] = []string{"false"}
+		}
 	}
 
 	req := NewUpdateRequest(attrs)

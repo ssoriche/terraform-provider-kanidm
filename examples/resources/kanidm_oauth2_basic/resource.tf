@@ -74,6 +74,27 @@ resource "kanidm_oauth2_basic" "simple_app" {
   ]
 }
 
+# Example: OAuth2 client for Forgejo/Gitea, which require the OIDC
+# preferred_username claim to be a plain short name (no `@` in usernames).
+# prefer_short_username flips Kanidm from returning the SPN
+# (`alice@idm.example.com`) to the short name (`alice`).
+resource "kanidm_oauth2_basic" "forgejo" {
+  name        = "forgejo-oidc"
+  displayname = "Forgejo Git Server"
+  origin      = "https://git.example.com"
+
+  redirect_uris = [
+    "https://git.example.com/user/oauth2/kanidm/callback"
+  ]
+
+  prefer_short_username = true
+
+  scope_map {
+    group  = "developers"
+    scopes = ["openid", "profile", "email", "groups"]
+  }
+}
+
 # Example: Imported existing OAuth2 client
 # Import command: terraform import kanidm_oauth2_basic.existing client_name
 # Note: Client secret will be automatically retrieved from Kanidm after import

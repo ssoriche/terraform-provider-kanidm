@@ -28,12 +28,13 @@ type oauth2BasicResource struct {
 }
 
 type oauth2BasicResourceModel struct {
-	Name         types.String `tfsdk:"name"`
-	DisplayName  types.String `tfsdk:"displayname"`
-	Origin       types.String `tfsdk:"origin"`
-	RedirectURIs types.List   `tfsdk:"redirect_uris"`
-	ScopeMaps    types.Set    `tfsdk:"scope_map"`
-	ClientSecret types.String `tfsdk:"client_secret"`
+	Name                types.String `tfsdk:"name"`
+	DisplayName         types.String `tfsdk:"displayname"`
+	Origin              types.String `tfsdk:"origin"`
+	RedirectURIs        types.List   `tfsdk:"redirect_uris"`
+	ScopeMaps           types.Set    `tfsdk:"scope_map"`
+	ClientSecret        types.String `tfsdk:"client_secret"`
+	PreferShortUsername types.Bool   `tfsdk:"prefer_short_username"`
 }
 
 type scopeMapModel struct {
@@ -112,6 +113,14 @@ Store it securely immediately after creation. You can regenerate it using the Ka
 				Computed:  true,
 				Sensitive: true,
 			},
+			"prefer_short_username": schema.BoolAttribute{
+				MarkdownDescription: "When true, the OIDC `preferred_username` claim returns the account's short name (e.g. `alice`) " +
+					"instead of the SPN (e.g. `alice@idm.example.com`). Useful for applications that expect a plain username " +
+					"without the domain suffix (e.g. Forgejo/Gitea, which reject `@` in usernames). " +
+					"When unset, the Kanidm default applies (SPN format).",
+				Optional: true,
+				Computed: true,
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"scope_map": schema.SetNestedBlock{
@@ -187,13 +196,20 @@ func (r *oauth2BasicResource) Create(ctx context.Context, req resource.CreateReq
 		}
 	}
 
+	var preferShortUsername *bool
+	if !plan.PreferShortUsername.IsNull() && !plan.PreferShortUsername.IsUnknown() {
+		v := plan.PreferShortUsername.ValueBool()
+		preferShortUsername = &v
+	}
+
 	tflog.Debug(ctx, "Setting displayname, origin and redirect URIs for OAuth2 client", map[string]any{
-		"displayname":    plan.DisplayName.ValueString(),
-		"origin":         plan.Origin.ValueString(),
-		"redirect_count": len(redirectURIs),
+		"displayname":           plan.DisplayName.ValueString(),
+		"origin":                plan.Origin.ValueString(),
+		"redirect_count":        len(redirectURIs),
+		"prefer_short_username": preferShortUsername,
 	})
 
-	if err := r.client.UpdateOAuth2Client(ctx, oauth2Client.Name, plan.DisplayName.ValueString(), plan.Origin.ValueString(), redirectURIs); err != nil {
+	if err := r.client.UpdateOAuth2Client(ctx, oauth2Client.Name, plan.DisplayName.ValueString(), plan.Origin.ValueString(), redirectURIs, preferShortUsername); err != nil {
 		resp.Diagnostics.AddError(
 			"Error Setting OAuth2 Configuration",
 			"OAuth2 client was created but configuration could not be set: "+err.Error(),
@@ -256,6 +272,12 @@ func (r *oauth2BasicResource) Create(ctx context.Context, req resource.CreateReq
 		plan.RedirectURIs = redirectURIsList
 	} else {
 		plan.RedirectURIs = types.ListNull(types.StringType)
+	}
+
+	if createdClient.PreferShortUsername != nil {
+		plan.PreferShortUsername = types.BoolValue(*createdClient.PreferShortUsername)
+	} else {
+		plan.PreferShortUsername = types.BoolValue(false)
 	}
 
 	// Keep the scope maps from the plan (can't read them back from API in current form)
@@ -323,6 +345,12 @@ func (r *oauth2BasicResource) Read(ctx context.Context, req resource.ReadRequest
 		state.RedirectURIs = types.ListNull(types.StringType)
 	}
 
+	if oauth2Client.PreferShortUsername != nil {
+		state.PreferShortUsername = types.BoolValue(*oauth2Client.PreferShortUsername)
+	} else {
+		state.PreferShortUsername = types.BoolValue(false)
+	}
+
 	// Retrieve client secret if not already in state (e.g., after import)
 	if state.ClientSecret.IsNull() || state.ClientSecret.ValueString() == "" {
 		tflog.Debug(ctx, "Client secret not in state, retrieving from API", map[string]any{
@@ -370,13 +398,20 @@ func (r *oauth2BasicResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
-	// Update OAuth2 client (displayname, origin, redirect URIs)
+	var preferShortUsername *bool
+	if !plan.PreferShortUsername.IsNull() && !plan.PreferShortUsername.IsUnknown() {
+		v := plan.PreferShortUsername.ValueBool()
+		preferShortUsername = &v
+	}
+
+	// Update OAuth2 client (displayname, origin, redirect URIs, prefer_short_username)
 	if err := r.client.UpdateOAuth2Client(
 		ctx,
 		plan.Name.ValueString(),
 		plan.DisplayName.ValueString(),
 		plan.Origin.ValueString(),
 		redirectURIs,
+		preferShortUsername,
 	); err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating OAuth2 Basic Client",
@@ -470,6 +505,12 @@ func (r *oauth2BasicResource) Update(ctx context.Context, req resource.UpdateReq
 		plan.RedirectURIs = redirectURIsList
 	} else {
 		plan.RedirectURIs = types.ListNull(types.StringType)
+	}
+
+	if updatedClient.PreferShortUsername != nil {
+		plan.PreferShortUsername = types.BoolValue(*updatedClient.PreferShortUsername)
+	} else {
+		plan.PreferShortUsername = types.BoolValue(false)
 	}
 
 	// Preserve client secret from state (cannot be read back from API)
