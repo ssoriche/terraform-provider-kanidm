@@ -277,7 +277,7 @@ func (r *oauth2BasicResource) Create(ctx context.Context, req resource.CreateReq
 	if createdClient.PreferShortUsername != nil {
 		plan.PreferShortUsername = types.BoolValue(*createdClient.PreferShortUsername)
 	} else {
-		plan.PreferShortUsername = types.BoolValue(false)
+		plan.PreferShortUsername = types.BoolNull()
 	}
 
 	// Keep the scope maps from the plan (can't read them back from API in current form)
@@ -348,7 +348,7 @@ func (r *oauth2BasicResource) Read(ctx context.Context, req resource.ReadRequest
 	if oauth2Client.PreferShortUsername != nil {
 		state.PreferShortUsername = types.BoolValue(*oauth2Client.PreferShortUsername)
 	} else {
-		state.PreferShortUsername = types.BoolValue(false)
+		state.PreferShortUsername = types.BoolNull()
 	}
 
 	// Retrieve client secret if not already in state (e.g., after import)
@@ -510,7 +510,7 @@ func (r *oauth2BasicResource) Update(ctx context.Context, req resource.UpdateReq
 	if updatedClient.PreferShortUsername != nil {
 		plan.PreferShortUsername = types.BoolValue(*updatedClient.PreferShortUsername)
 	} else {
-		plan.PreferShortUsername = types.BoolValue(false)
+		plan.PreferShortUsername = types.BoolNull()
 	}
 
 	// Preserve client secret from state (cannot be read back from API)
