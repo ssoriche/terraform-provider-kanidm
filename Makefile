@@ -6,10 +6,27 @@ default: build
 build:
 	go build -o terraform-provider-kanidm
 
-# Install the provider locally for testing
-install: build
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/ssoriche/kanidm/0.1.0/darwin_arm64/
-	cp terraform-provider-kanidm ~/.terraform.d/plugins/registry.terraform.io/ssoriche/kanidm/0.1.0/darwin_arm64/
+# Version published into the local filesystem mirror. Must satisfy the
+# `version` constraint in the consuming config (homelab: terraform/kanidm).
+PROVIDER_VERSION ?= 0.1.0
+MIRROR_DIR ?= $(HOME)/.terraform.d/plugins/registry.terraform.io/ssoriche/kanidm/$(PROVIDER_VERSION)
+# linux_amd64 is built alongside the host platform so .terraform.lock.hcl can
+# carry CI checksums as well as local ones. Keep in sync with the platforms
+# passed to `terraform providers lock -platform=...`.
+MIRROR_PLATFORMS ?= darwin_arm64 linux_amd64
+
+# Install the provider into the local filesystem mirror for every platform in
+# MIRROR_PLATFORMS. Re-run this after any change, or the mirror will serve a
+# stale binary and `terraform init` will fail on a lock file checksum mismatch.
+install:
+	@for platform in $(MIRROR_PLATFORMS); do \
+		goos="$${platform%_*}"; goarch="$${platform#*_}"; \
+		echo "installing $$goos/$$goarch -> $(MIRROR_DIR)/$$platform"; \
+		mkdir -p "$(MIRROR_DIR)/$$platform"; \
+		CGO_ENABLED=0 GOOS="$$goos" GOARCH="$$goarch" go build -trimpath -buildvcs=false \
+			-ldflags "-s -w -X main.version=$(PROVIDER_VERSION)" \
+			-o "$(MIRROR_DIR)/$$platform/terraform-provider-kanidm" . ; \
+	done
 
 # Run unit tests
 test:
