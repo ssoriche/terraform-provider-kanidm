@@ -19,7 +19,7 @@ MIRROR_PLATFORMS ?= darwin_arm64 linux_amd64
 # MIRROR_PLATFORMS. Re-run this after any change, or the mirror will serve a
 # stale binary and `terraform init` will fail on a lock file checksum mismatch.
 install:
-	@for platform in $(MIRROR_PLATFORMS); do \
+	@set -e; for platform in $(MIRROR_PLATFORMS); do \
 		goos="$${platform%_*}"; goarch="$${platform#*_}"; \
 		echo "installing $$goos/$$goarch -> $(MIRROR_DIR)/$$platform"; \
 		mkdir -p "$(MIRROR_DIR)/$$platform"; \
